@@ -1,0 +1,38 @@
+---
+title: "Variation in voter turnout"
+author: "Psephoanalytics"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    css: psepho_styles.css
+---
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+library(toVotes)
+library(toCensus)
+library(ggplot2)
+library(scales)
+toTurnout <- dplyr::filter(toTurnout, prop_voted <= 1)
+```
+
+As we educate our voting agents, we'll need to base their behaviour on what has actually been observed in Toronto's elections. Part of this will include making sure the agents behaviour results in turnout statistics that range across the full spectrum.
+
+As a first look, we start with a simple plot of the % turnout by ward and year:
+
+```{r turnout_plot, echo=FALSE, message=FALSE, warning=FALSE}
+p <- ggplot(toTurnout, aes(factor(ward), prop_voted))
+p + geom_boxplot() + facet_wrap(~year) + scale_y_continuous(labels = percent) + 
+  scale_x_discrete(breaks=NULL) +
+  labs(x = "Ward", y = "% turnout")
+```
+
+Clearly, there's significant variation with turnout ranging from just above 0% to 100%.
+
+```{r turnout_var, cache=TRUE, echo=FALSE}
+library(nlme)
+library(ape)
+turnout_lme <- lme(prop_voted ~ 1, data = toTurnout, random = ~ 1|year/ward, na.action = na.exclude)
+plot(varcomp(turnout_lme))
+# income_lme <- lme(family_income ~ 1, data = voters, random = ~ 1|ward, na.action = na.exclude)
+# plot(varcomp(income_lme))
+```
